@@ -10,6 +10,7 @@ import { birdSVG, artForSpecies, SPECIES_ART, slugify } from '../art/birds.js';
 import { celebrate } from '../celebrate.js';
 
 let camActive = false;
+let lastActionRect = null; // where "Identify this bird" was last pressed
 
 export function leaveSpot() {
   if (camActive) { stopCamera(); camActive = false; }
@@ -114,6 +115,7 @@ async function showReviewStep(stage, photo) {
     const btn = e.currentTarget;
     if (btn.disabled) return;
     btn.disabled = true; // a double tap must not file two sightings
+    lastActionRect = btn.getBoundingClientRect(); // ghost-tap protection, see showResultStep
     const sighting = {
       dateISO: new Date().toISOString(),
       photo,
@@ -165,10 +167,22 @@ export function showResultStep(stage, sighting, onDone) {
   const result = sighting.idResult || {};
   const cands = sighting.candidates || [];
 
-  // brief input guard: a fast identification must not let the tail of a
-  // double-tap "Identify" click-through-confirm a species unseen
+  // input guards: a fast identification must not let stray taps meant for
+  // "Identify this bird" land on the confirm button that replaces it —
+  // block everything briefly, then swallow early clicks that land exactly
+  // where the identify button used to be
   stage.style.pointerEvents = 'none';
-  setTimeout(() => { stage.style.pointerEvents = ''; }, 450);
+  setTimeout(() => { stage.style.pointerEvents = ''; }, 650);
+  const renderedAt = Date.now();
+  stage.addEventListener('click', e => {
+    const r = lastActionRect;
+    if (r && Date.now() - renderedAt < 1400 &&
+        e.clientX >= r.left && e.clientX <= r.right &&
+        e.clientY >= r.top && e.clientY <= r.bottom) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+  }, { capture: true });
 
   if (sighting.idStatus === 'not_bird') {
     stage.innerHTML = `
@@ -223,7 +237,7 @@ export function showResultStep(stage, sighting, onDone) {
 
   stage.innerHTML = `
     ${top ? `
-    <div class="panel card-tilt-l" style="text-align:center">
+    <div class="panel card-tilt-l" style="text-align:center;margin-top:40px">
       ${panelBg('result-' + sighting.id, { w: 340, h: 360, wobble: 0.035 })}
       <p class="cel-kicker" style="margin:2px 0 0">${lowConfidence ? 'Best guess — your call:' : 'The guide says:'}</p>
       <div class="entry-art-lg" style="width:180px;height:180px;margin:0 auto">${birdSVG(topArt, { seed: 'confirm-top' })}</div>

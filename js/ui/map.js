@@ -50,13 +50,14 @@ export async function renderMap(screen) {
   });
 
   const spots = [...new Set(placed.map(s => s.place).filter(Boolean))];
+  const labels = pinLabels(placed); // same short labels the pins carry
   const bySpecies = new Map();
   for (const s of placed) if (!bySpecies.has(s.speciesKey)) bySpecies.set(s.speciesKey, s);
   const legend = [...bySpecies.values()].map(s => {
     const art = store.artFor(s.speciesKey);
     return `<span class="chip" style="cursor:pointer" data-entry="${s.id}">
       <span style="display:inline-block;width:15px;height:15px">${splatSVG({ size: 15, seed: 'leg-' + s.speciesKey, color: art.colors.body, opacity: 0.85 })}</span>
-      <span class="small">${esc(initials(s.commonName))} — ${esc(s.commonName)}</span></span>`;
+      <span class="small">${esc(labels.get(s.speciesKey))} — ${esc(s.commonName)}</span></span>`;
   }).join('');
   screen.querySelector('#map-caption').innerHTML = `
     <p class="muted small" style="text-align:center;margin-top:10px">${placed.length} pinned sighting${placed.length === 1 ? '' : 's'}${spots.length ? ` across ${esc(spots.slice(0, 3).join(', '))}${spots.length > 3 ? '…' : ''}` : ''} — tap a bird to open its page.</p>
