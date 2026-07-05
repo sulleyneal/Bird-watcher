@@ -50,9 +50,21 @@ export async function renderMap(screen) {
   });
 
   const spots = [...new Set(placed.map(s => s.place).filter(Boolean))];
+  const bySpecies = new Map();
+  for (const s of placed) if (!bySpecies.has(s.speciesKey)) bySpecies.set(s.speciesKey, s);
+  const legend = [...bySpecies.values()].map(s => {
+    const art = store.artFor(s.speciesKey);
+    return `<span class="chip" style="cursor:pointer" data-entry="${s.id}">
+      <span style="display:inline-block;width:15px;height:15px">${splatSVG({ size: 15, seed: 'leg-' + s.speciesKey, color: art.colors.body, opacity: 0.85 })}</span>
+      <span class="small">${esc(initials(s.commonName))} — ${esc(s.commonName)}</span></span>`;
+  }).join('');
   screen.querySelector('#map-caption').innerHTML = `
     <p class="muted small" style="text-align:center;margin-top:10px">${placed.length} pinned sighting${placed.length === 1 ? '' : 's'}${spots.length ? ` across ${esc(spots.slice(0, 3).join(', '))}${spots.length > 3 ? '…' : ''}` : ''} — tap a bird to open its page.</p>
-    ${unplaced.length ? `<p class="muted small" style="text-align:center">${unplaced.length} more sighting${unplaced.length === 1 ? ' has' : 's have'} no location recorded.</p>` : ''}`;
+    ${unplaced.length ? `<p class="muted small" style="text-align:center">${unplaced.length} more sighting${unplaced.length === 1 ? ' has' : 's have'} no location recorded.</p>` : ''}
+    <h3 class="script" style="font-size:1.4rem;margin:14px 2px 6px;color:var(--ink-soft)">Pinned species</h3>
+    <div style="display:flex;flex-wrap:wrap;gap:8px 14px">${legend}</div>`;
+  screen.querySelectorAll('[data-entry]').forEach(c =>
+    c.addEventListener('click', () => { location.hash = `#/entry/${c.dataset.entry}`; }));
 }
 
 function terrainSVG(W, H, placed, X, Y) {
@@ -90,13 +102,32 @@ function terrainSVG(W, H, placed, X, Y) {
     <text x="${cx}" y="${cy - 30}" text-anchor="middle" font-family="Caveat" font-size="19" fill="#42392b" font-weight="700">N</text>
   </g>`;
 
-  // pins: cluster-aware simple jitter
-  const seen = new Map();
-  for (const s of placed) {
-    const k = `${Math.round(X(s.lon) / 30)}:${Math.round(Y(s.lat) / 30)}`;
-    const n = seen.get(k) || 0; seen.set(k, n + 1);
-    const jx = (n % 3) * 24 - 24, jy = Math.floor(n / 3) * 26 - 10;
-    const x = X(s.lon) + jx, y = Y(s.lat) + jy;
+  // pins: place at true coordinates, then relax collisions so clustered
+  // sightings fan out instead of stacking
+  const pts = placed.map(s => ({ s, x: X(s.lon), y: Y(s.lat) }));
+  const MIN = 34;
+  for (let iter = 0; iter < 60; iter++) {
+    let moved = false;
+    for (let i = 0; i < pts.length; i++) {
+      for (let j = i + 1; j < pts.length; j++) {
+        const dx = pts[j].x - pts[i].x, dy = pts[j].y - pts[i].y;
+        const d = Math.hypot(dx, dy) || 0.01;
+        if (d < MIN) {
+          const push = (MIN - d) / 2;
+          const ux = dx / d, uy = dy / d;
+          pts[i].x -= ux * push; pts[i].y -= uy * push;
+          pts[j].x += ux * push; pts[j].y += uy * push;
+          moved = true;
+        }
+      }
+    }
+    if (!moved) break;
+  }
+  for (const p of pts) {
+    p.x = Math.max(66, Math.min(W - 66, p.x));
+    p.y = Math.max(80, Math.min(H - 76, p.y));
+  }
+  for (const { s, x, y } of pts) {
     const art = store.artFor(s.speciesKey);
     const color = art.colors.body;
     g += `<g class="map-pin" data-id="${s.id}" transform="translate(${x - 17},${y - 34})" role="button" tabindex="0" aria-label="${esc(s.commonName)}">

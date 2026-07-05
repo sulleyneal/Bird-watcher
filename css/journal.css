@@ -115,7 +115,7 @@ h1, h2, h3 { font-family: var(--hand); font-weight: 700; color: var(--ink); marg
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='6' viewBox='0 0 300 6'%3E%3Cpath d='M2 4 Q75 2.2 150 3.6 T298 3.2' fill='none' stroke='%236b5f4c' stroke-width='1.1' stroke-linecap='round' opacity='.55'/%3E%3C/svg%3E");
   background-repeat: repeat-x; background-position: 0 100%; background-size: 300px 6px;
 }
-.field textarea { line-height: 2.05rem; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='33' viewBox='0 0 300 33'%3E%3Cpath d='M2 30 Q75 28.4 150 29.8 T298 29.4' fill='none' stroke='%236b5f4c' stroke-width='1' stroke-linecap='round' opacity='.4'/%3E%3C/svg%3E"); background-repeat: repeat; background-size: 300px 2.05rem; }
+.field textarea { line-height: 2.05rem; overflow: hidden; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='33' viewBox='0 0 300 33'%3E%3Cpath d='M2 30 Q75 28.4 150 29.8 T298 29.4' fill='none' stroke='%236b5f4c' stroke-width='1' stroke-linecap='round' opacity='.4'/%3E%3C/svg%3E"); background-repeat: repeat; background-size: 300px 2.05rem; }
 .field input::placeholder, .field textarea::placeholder { color: var(--ink-faint); opacity: .8; }
 
 /* ---------- chips / tags ---------- */

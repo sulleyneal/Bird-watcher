@@ -110,7 +110,10 @@ async function showReviewStep(stage, photo) {
 
   stage.querySelector('#retake').addEventListener('click', () => showCameraStep(stage));
 
-  stage.querySelector('#go-id').addEventListener('click', async () => {
+  stage.querySelector('#go-id').addEventListener('click', async (e) => {
+    const btn = e.currentTarget;
+    if (btn.disabled) return;
+    btn.disabled = true; // a double tap must not file two sightings
     const sighting = {
       dateISO: new Date().toISOString(),
       photo,
@@ -300,7 +303,11 @@ export function showManualStep(stage, sighting, onDone) {
   stage.querySelector('#back').addEventListener('click', () => showResultStep(stage, sighting, onDone));
 }
 
+const confirming = new WeakSet();
 async function finishConfirm(stage, sighting, cand, onDone) {
+  if (confirming.has(sighting)) return; // double-tap guard
+  confirming.add(sighting);
+  stage.querySelectorAll('button, .cand').forEach(b => { b.style.pointerEvents = 'none'; });
   const { isNew } = await store.confirmSighting(sighting, cand);
   if (isNew) {
     const art = store.artFor(sighting.speciesKey);

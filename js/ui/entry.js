@@ -86,8 +86,11 @@ export async function renderEntry(screen, id) {
   screen.querySelector('#back').addEventListener('click', () => { location.hash = '#/'; });
 
   const notesEl = screen.querySelector('#edit-notes');
+  const grow = () => { notesEl.style.height = 'auto'; notesEl.style.height = Math.min(notesEl.scrollHeight + 4, 600) + 'px'; };
+  grow();
   let saveTimer = null;
   notesEl.addEventListener('input', () => {
+    grow();
     clearTimeout(saveTimer);
     saveTimer = setTimeout(async () => {
       s.notes = notesEl.value.trim();
@@ -165,6 +168,10 @@ async function shareCard(s, art) {
   const dateLine = store.formatDate(s.dateISO);
   const placeLine = s.place || (s.lat != null ? fmtCoords(s.lat, s.lon) : '');
   const notes = (s.notes || s.fieldNotes || '').slice(0, 160);
+  // wrap the handwritten note: Caveat at 46px runs ~19px/char average
+  const noteX = s.photo ? 440 : 140;
+  const noteWidth = 1080 - noteX - 140;
+  const noteLines = wrapText(notes ? `“${notes}”` : '', Math.floor(noteWidth / 19), 3);
 
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
   <style>${fontCSS}
@@ -182,9 +189,9 @@ async function shareCard(s, art) {
      <rect x="-14" y="-14" width="288" height="288" fill="#fdfaf1" stroke="#d8cfb4"/>
      <image href="${s.photo}" x="0" y="0" width="260" height="260" preserveAspectRatio="xMidYMid slice"/>
    </g>` : ''}
-  <text x="${s.photo ? 440 : 140}" y="940" class="b" font-size="36">${escXML(dateLine)}</text>
-  ${placeLine ? `<text x="${s.photo ? 440 : 140}" y="994" class="b" font-size="36">${escXML(placeLine)}</text>` : ''}
-  ${notes ? `<text x="${s.photo ? 440 : 140}" y="1064" class="t" font-size="46">${escXML('“' + notes + '”')}</text>` : ''}
+  <text x="${noteX}" y="940" class="b" font-size="36">${escXML(truncLine(dateLine, Math.floor(noteWidth / 17)))}</text>
+  ${placeLine ? `<text x="${noteX}" y="994" class="b" font-size="36">${escXML(truncLine(placeLine, Math.floor(noteWidth / 17)))}</text>` : ''}
+  ${noteLines.map((line, i) => `<text x="${noteX}" y="${1058 + i * 58}" class="t" font-size="46">${escXML(line)}</text>`).join('')}
   <text x="${W / 2}" y="1268" text-anchor="middle" class="s" font-size="32">— from my Field Journal —</text>
 </svg>`;
 
@@ -202,6 +209,29 @@ async function shareCard(s, art) {
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 5000);
   toast('Journal card saved as an image');
+}
+
+function wrapText(text, maxChars, maxLines) {
+  if (!text) return [];
+  const words = text.split(/\s+/);
+  const lines = [];
+  let line = '';
+  let truncated = false;
+  for (const w of words) {
+    if (line && (line + ' ' + w).length > maxChars) {
+      if (lines.length === maxLines - 1) { truncated = true; break; }
+      lines.push(line);
+      line = w;
+    } else {
+      line = line ? line + ' ' + w : w;
+    }
+  }
+  if (line) lines.push(line);
+  if (truncated) lines[lines.length - 1] = lines[lines.length - 1].slice(0, maxChars - 2) + '…”';
+  return lines;
+}
+function truncLine(text, maxChars) {
+  return text.length > maxChars ? text.slice(0, maxChars - 1) + '…' : text;
 }
 
 function stripSvg(svg) { return svg.replace(/^<svg[^>]*>/, '').replace(/<\/svg>$/, ''); }

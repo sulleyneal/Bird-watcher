@@ -13,8 +13,13 @@ let loaded = false;
 
 export async function load() {
   const [sightings, species] = await Promise.all([db.all('sightings'), db.all('species')]);
-  sightings.sort((a, b) => b.dateISO.localeCompare(a.dateISO));
-  cache = { sightings, species };
+  // purge not-a-bird records left behind by a mid-flow exit: they are
+  // invisible in every view, so keeping them would just leak photos
+  const orphans = sightings.filter(s => s.idStatus === 'not_bird');
+  for (const o of orphans) await db.del('sightings', o.id);
+  const kept = sightings.filter(s => s.idStatus !== 'not_bird');
+  kept.sort((a, b) => b.dateISO.localeCompare(a.dateISO));
+  cache = { sightings: kept, species };
   loaded = true;
   return cache;
 }
@@ -87,10 +92,12 @@ export async function confirmSighting(sighting, cand) {
     };
     cache.species.push(sp);
   }
-  sp.count += 1;
-  if (sighting.dateISO < sp.firstSeenISO) sp.firstSeenISO = sighting.dateISO;
-  await db.put('species', sp);
   await saveSighting(sighting);
+  // recount from the source of truth so a double confirm stays idempotent
+  const mine = cache.sightings.filter(x => x.speciesKey === key && x.idStatus === 'confirmed');
+  sp.count = mine.length;
+  sp.firstSeenISO = mine.reduce((a, x) => (x.dateISO < a ? x.dateISO : a), sighting.dateISO);
+  await db.put('species', sp);
   sighting.isNewSpecies = isNew;
   return { isNew, species: sp };
 }

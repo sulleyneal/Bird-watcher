@@ -47,39 +47,92 @@ function srand(seed) {
   return () => { a = (a * 1664525 + 1013904223) >>> 0; return a / 4294967296; };
 }
 
-/* a plausible "photo": sky wash, branch, bird silhouette — canvas-made */
-function fakePhoto(key, i) {
+/* a plausible "photo": sky wash matched to time of day, habitat, and a
+   silhouette matched to the species' body shape — canvas-made */
+function fakePhoto(key, i, hour = 10) {
   const r = srand(key + i);
   const canvas = document.createElement('canvas');
   canvas.width = 480; canvas.height = 640;
   const ctx = canvas.getContext('2d');
-  const skies = [['#cfe0e8', '#a8c3d1'], ['#e8e3cf', '#c9d1a8'], ['#dfe8ea', '#b3c4cc'], ['#f0e4cc', '#d1bfa0']];
+  const art = SPECIES_ART[key];
+  const shape = art && art.traits && art.traits.shape ? art.traits.shape : 'songbird';
+  const night = hour >= 20 || hour < 6;
+  const dusk = !night && (hour >= 18 || hour < 8);
+  const skies = night ? [['#2e3444', '#1d2230']]
+    : dusk ? [['#e8cfae', '#c9a184'], ['#dfc4b0', '#b394a0']]
+    : [['#cfe0e8', '#a8c3d1'], ['#e8e3cf', '#c9d1a8'], ['#dfe8ea', '#b3c4cc']];
   const sky = skies[Math.floor(r() * skies.length)];
   const g = ctx.createLinearGradient(0, 0, 0, 640);
   g.addColorStop(0, sky[0]); g.addColorStop(1, sky[1]);
   ctx.fillStyle = g; ctx.fillRect(0, 0, 480, 640);
-  // soft foliage blobs
+  const water = shape === 'duck' || shape === 'longneck';
+  // soft foliage / shore blobs
   for (let b = 0; b < 5; b++) {
-    ctx.fillStyle = `rgba(${90 + r() * 40},${110 + r() * 40},${70 + r() * 30},0.25)`;
+    const shade = night ? 30 : 90;
+    ctx.fillStyle = `rgba(${shade + r() * 40},${shade + 20 + r() * 40},${shade - 20 + r() * 30},0.25)`;
     ctx.beginPath();
     ctx.ellipse(r() * 480, r() * 300, 90 + r() * 120, 60 + r() * 90, r(), 0, Math.PI * 2);
     ctx.fill();
   }
-  // branch
-  ctx.strokeStyle = '#4a3a28'; ctx.lineWidth = 10; ctx.lineCap = 'round';
-  const by = 380 + r() * 120;
-  ctx.beginPath(); ctx.moveTo(-10, by + 30); ctx.quadraticCurveTo(240, by - 20, 500, by + 10); ctx.stroke();
-  // bird silhouette
-  const art = SPECIES_ART[key];
-  const dark = art ? art.colors.body : '#333';
-  const bx = 180 + r() * 120, byy = by - 40;
-  ctx.fillStyle = dark;
-  ctx.globalAlpha = 0.9;
-  ctx.beginPath(); ctx.ellipse(bx, byy, 46, 34, -0.15, 0, Math.PI * 2); ctx.fill();       // body
-  ctx.beginPath(); ctx.ellipse(bx + 38, byy - 28, 22, 20, 0, 0, Math.PI * 2); ctx.fill();  // head
-  ctx.beginPath(); ctx.moveTo(bx - 40, byy); ctx.lineTo(bx - 88, byy + 26); ctx.lineTo(bx - 78, byy + 40); ctx.lineTo(bx - 34, byy + 16); ctx.fill(); // tail
-  ctx.beginPath(); ctx.moveTo(bx + 58, byy - 30); ctx.lineTo(bx + 76, byy - 24); ctx.lineTo(bx + 58, byy - 20); ctx.fill(); // beak
-  ctx.globalAlpha = 1;
+  const dark = night ? '#20222a' : (art ? art.colors.body : '#333');
+  let bx = 180 + r() * 120, byy;
+  if (water) {
+    // waterline scene
+    const wy = 400 + r() * 60;
+    ctx.fillStyle = night ? 'rgba(40,50,66,0.9)' : 'rgba(120,150,155,0.7)';
+    ctx.fillRect(0, wy, 480, 640 - wy);
+    for (let k2 = 0; k2 < 8; k2++) {
+      ctx.strokeStyle = 'rgba(255,255,255,0.18)'; ctx.lineWidth = 2;
+      ctx.beginPath(); const ry = wy + 20 + r() * 160;
+      ctx.moveTo(r() * 300, ry); ctx.lineTo(100 + r() * 340, ry); ctx.stroke();
+    }
+    byy = wy - 4;
+    ctx.fillStyle = dark; ctx.globalAlpha = 0.92;
+    if (shape === 'duck') {
+      ctx.beginPath(); ctx.ellipse(bx, byy - 20, 56, 30, 0, 0, Math.PI * 2); ctx.fill();     // body on water
+      ctx.beginPath(); ctx.ellipse(bx + 42, byy - 58, 17, 15, 0, 0, Math.PI * 2); ctx.fill(); // head
+      ctx.beginPath(); ctx.moveTo(bx + 56, byy - 60); ctx.lineTo(bx + 80, byy - 54); ctx.lineTo(bx + 56, byy - 50); ctx.fill();
+      ctx.fillRect(bx + 36, byy - 48, 10, 14); // neck
+    } else {
+      ctx.beginPath(); ctx.ellipse(bx, byy - 90, 40, 26, 0.1, 0, Math.PI * 2); ctx.fill();   // heron body
+      ctx.fillRect(bx + 18, byy - 150, 8, 66);                                                // neck
+      ctx.beginPath(); ctx.ellipse(bx + 26, byy - 152, 13, 10, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(bx + 37, byy - 154); ctx.lineTo(bx + 72, byy - 148); ctx.lineTo(bx + 37, byy - 144); ctx.fill();
+      ctx.strokeStyle = dark; ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.moveTo(bx - 8, byy - 68); ctx.lineTo(bx - 10, byy + 4); ctx.moveTo(bx + 10, byy - 66); ctx.lineTo(bx + 14, byy + 4); ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  } else {
+    // branch scene
+    ctx.strokeStyle = night ? '#15161c' : '#4a3a28'; ctx.lineWidth = 10; ctx.lineCap = 'round';
+    const by = 380 + r() * 120;
+    ctx.beginPath(); ctx.moveTo(-10, by + 30); ctx.quadraticCurveTo(240, by - 20, 500, by + 10); ctx.stroke();
+    byy = by - 40;
+    ctx.fillStyle = dark; ctx.globalAlpha = 0.92;
+    if (shape === 'owl') {
+      ctx.beginPath(); ctx.ellipse(bx, byy - 20, 44, 56, 0, 0, Math.PI * 2); ctx.fill();      // upright body
+      ctx.beginPath(); ctx.ellipse(bx, byy - 74, 34, 26, 0, 0, Math.PI * 2); ctx.fill();      // big head
+      ctx.beginPath(); ctx.moveTo(bx - 30, byy - 92); ctx.lineTo(bx - 20, byy - 116); ctx.lineTo(bx - 10, byy - 94); ctx.fill(); // tufts
+      ctx.beginPath(); ctx.moveTo(bx + 30, byy - 92); ctx.lineTo(bx + 20, byy - 116); ctx.lineTo(bx + 10, byy - 94); ctx.fill();
+    } else if (shape === 'raptor') {
+      ctx.beginPath(); ctx.ellipse(bx, byy - 16, 48, 62, 0.05, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(bx + 14, byy - 80, 22, 19, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(bx + 32, byy - 84); ctx.lineTo(bx + 48, byy - 76); ctx.lineTo(bx + 32, byy - 70); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(bx - 20, byy + 30); ctx.lineTo(bx - 44, byy + 74); ctx.lineTo(bx - 26, byy + 80); ctx.lineTo(bx - 6, byy + 40); ctx.fill(); // tail
+    } else {
+      ctx.beginPath(); ctx.ellipse(bx, byy, 46, 34, -0.15, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(bx + 38, byy - 28, 22, 20, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(bx - 40, byy); ctx.lineTo(bx - 88, byy + 26); ctx.lineTo(bx - 78, byy + 40); ctx.lineTo(bx - 34, byy + 16); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(bx + 58, byy - 30); ctx.lineTo(bx + 76, byy - 24); ctx.lineTo(bx + 58, byy - 20); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+  if (night) { // moonlight rim
+    ctx.fillStyle = 'rgba(232,226,200,0.85)';
+    ctx.beginPath(); ctx.arc(390, 90, 34, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = sky[0];
+    ctx.beginPath(); ctx.arc(378, 82, 30, 0, Math.PI * 2); ctx.fill();
+  }
   // grain
   for (let n = 0; n < 900; n++) {
     ctx.fillStyle = `rgba(60,50,40,${r() * 0.06})`;
@@ -128,7 +181,7 @@ export async function seedDemo(variant = 'demo') {
     const sighting = {
       id: newId() + '-' + i,
       dateISO: d.toISOString(),
-      photo: fakePhoto(key, i),
+      photo: fakePhoto(key, i, hour),
       place: loc.place,
       lat: loc.lat + (r() - 0.5) * 0.006,
       lon: loc.lon + (r() - 0.5) * 0.006,
