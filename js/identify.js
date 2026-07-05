@@ -11,6 +11,11 @@ export function idMode() { return mode; }
 export function onModeChange(fn) { modeListeners.add(fn); }
 
 export async function checkHealth() {
+  if (window.__DEMO_LOCAL__) {
+    mode = 'mock';
+    modeListeners.forEach(fn => fn(mode));
+    return mode;
+  }
   try {
     const r = await fetch('api/health', { cache: 'no-store' });
     const j = await r.json();
@@ -24,6 +29,15 @@ export async function checkHealth() {
 export async function identifyPhoto(photoDataURL, extra = {}) {
   const m = photoDataURL.match(/^data:(image\/\w+);base64,(.*)$/s);
   if (!m) throw new Error('bad-photo');
+  if (window.__DEMO_LOCAL__) {
+    // hosted-preview build: no backend reachable, run the demo identifier
+    // in-page (the UI labels this mode honestly)
+    const { identifyMock } = await import('../lib/identify-core.js');
+    await new Promise(r => setTimeout(r, 1200)); // a beat of "leafing through"
+    mode = 'mock';
+    modeListeners.forEach(fn => fn(mode));
+    return identifyMock({ existingSpecies: getSpecies().map(s => s.commonName) });
+  }
   const body = {
     mediaType: m[1],
     image: m[2],

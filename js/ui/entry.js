@@ -153,18 +153,26 @@ let fontCSSCache = null;
 async function embeddedFontCSS() {
   if (fontCSSCache) return fontCSSCache;
   const load = async (path) => {
-    const buf = await (await fetch(path)).arrayBuffer();
+    const res = await fetch(path);
+    if (!res.ok) throw new Error('font-missing');
+    const buf = await res.arrayBuffer();
     let bin = ''; const bytes = new Uint8Array(buf);
     for (let i = 0; i < bytes.length; i += 8192) bin += String.fromCharCode(...bytes.subarray(i, i + 8192));
     return btoa(bin);
   };
-  const [caveat, alegreya, alegreyaIt] = await Promise.all([
-    load('fonts/caveat-700.woff2'), load('fonts/alegreya-500.woff2'), load('fonts/alegreya-400-italic.woff2'),
-  ]);
-  fontCSSCache = `
-    @font-face{font-family:'Caveat';font-weight:700;src:url(data:font/woff2;base64,${caveat}) format('woff2')}
-    @font-face{font-family:'Alegreya';font-weight:500;src:url(data:font/woff2;base64,${alegreya}) format('woff2')}
-    @font-face{font-family:'Alegreya';font-style:italic;font-weight:400;src:url(data:font/woff2;base64,${alegreyaIt}) format('woff2')}`;
+  try {
+    const [caveat, alegreya, alegreyaIt] = await Promise.all([
+      load('fonts/caveat-700.woff2'), load('fonts/alegreya-500.woff2'), load('fonts/alegreya-400-italic.woff2'),
+    ]);
+    fontCSSCache = `
+      @font-face{font-family:'Caveat';font-weight:700;src:url(data:font/woff2;base64,${caveat}) format('woff2')}
+      @font-face{font-family:'Alegreya';font-weight:500;src:url(data:font/woff2;base64,${alegreya}) format('woff2')}
+      @font-face{font-family:'Alegreya';font-style:italic;font-weight:400;src:url(data:font/woff2;base64,${alegreyaIt}) format('woff2')}`;
+  } catch (e) {
+    // hosted-preview build: fonts aren't fetchable; the card falls back to
+    // the page's loaded faces (rendering still works via canvas)
+    fontCSSCache = '';
+  }
   return fontCSSCache;
 }
 

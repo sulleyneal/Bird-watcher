@@ -29,8 +29,16 @@ export async function renderJournal(screen) {
       <h2>No birds yet</h2>
       <p>Step outside, keep your ears open, and press <strong>Spot</strong> when a bird finds you.</p>
       ${washBtn('Spot your first bird', { color: PIGMENT.rust, icon: 'binoculars', id: 'first-spot', w: 250 })}
+      ${window.__DEMO_LOCAL__ ? `<div style="margin-top:10px"><button class="link-hand" id="demo-fill">…or leaf through a sample journal</button></div>` : ''}
     </div>`));
     entries.querySelector('#first-spot').addEventListener('click', () => { location.hash = '#/spot'; });
+    const fill = entries.querySelector('#demo-fill');
+    if (fill) fill.addEventListener('click', async () => {
+      fill.textContent = 'painting the pages…';
+      const { seedDemo } = await import('../seed.js');
+      await seedDemo('demo');
+      renderJournal(screen);
+    });
   } else {
     let lastMonth = '';
     sightings.forEach((s, i) => {

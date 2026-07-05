@@ -9,6 +9,7 @@
     "fullloop": "node test/fullloop.js"
   },
   "devDependencies": {
+    "esbuild": "^0.28.1",
     "playwright-core": "^1.61.1"
   }
 }
