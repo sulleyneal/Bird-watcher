@@ -3,5 +3,10 @@
   "builds": [
     { "src": "api/*.js", "use": "@vercel/node" },
     { "src": "**", "use": "@vercel/static" }
+  ],
+  "routes": [
+    { "src": "/api/health", "dest": "/api/health.js" },
+    { "src": "/api/identify", "dest": "/api/identify.js" },
+    { "handle": "filesystem" }
   ]
 }
