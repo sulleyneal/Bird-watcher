@@ -145,12 +145,14 @@ function showIdentifyingStep(stage, sighting) {
     .then(async result => {
       applyResult(sighting, result);
       await store.saveSighting(sighting);
+      if (!stage.isConnected) return; // user navigated away; entry updates in place
       showResultStep(stage, sighting, () => { location.hash = '#/'; });
     })
-    .catch(async () => {
-      // network dropped mid-flight: it's already queued
-      toast('No connection — saved, and it will be identified later', 4200);
-      location.hash = '#/';
+    .catch(async err => {
+      // it's already saved as queued, so nothing is lost either way
+      if (!navigator.onLine) toast('No connection — saved, and it will be identified later', 4200);
+      else toast('The guide is unreachable right now — saved, will retry shortly', 4200);
+      if (stage.isConnected) location.hash = '#/';
     });
 }
 
