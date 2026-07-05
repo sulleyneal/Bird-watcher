@@ -130,10 +130,17 @@ function confirmDelete(s) {
         ${ghostBtn('Keep it', { id: 'del-no' })}
       </div>
     </div></div>`);
-  overlay.querySelector('#del-no').addEventListener('click', () => overlay.remove());
+  const dismiss = () => {
+    overlay.remove();
+    window.removeEventListener('keydown', onKey);
+  };
+  const onKey = e => { if (e.key === 'Escape') dismiss(); };
+  window.addEventListener('keydown', onKey);
+  overlay.addEventListener('click', e => { if (e.target === overlay) dismiss(); });
+  overlay.querySelector('#del-no').addEventListener('click', dismiss);
   overlay.querySelector('#del-yes').addEventListener('click', async () => {
     await store.deleteSighting(s.id);
-    overlay.remove();
+    dismiss();
     toast('Page removed');
     location.hash = '#/';
   });

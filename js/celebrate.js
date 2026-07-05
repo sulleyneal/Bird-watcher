@@ -33,8 +33,20 @@ export function celebrate(art, opts = {}) {
       s.innerHTML = splatSVG({ size: 60, seed: `cel-splat-${i}-${art.key}`, color: CEL_COLORS[i % CEL_COLORS.length], opacity: 0.55 });
       overlay.appendChild(s);
     }
-    const done = () => { overlay.remove(); resolve(); };
+    let finished = false;
+    const done = () => {
+      if (finished) return;
+      finished = true;
+      overlay.remove();
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('hashchange', done);
+      resolve();
+    };
+    const onKey = e => { if (e.key === 'Escape') done(); };
     overlay.querySelector('#cel-ok').addEventListener('click', done);
+    overlay.addEventListener('click', e => { if (e.target === overlay) done(); });
+    window.addEventListener('keydown', onKey);
+    window.addEventListener('hashchange', done);
     document.getElementById('overlay-root').appendChild(overlay);
   });
 }

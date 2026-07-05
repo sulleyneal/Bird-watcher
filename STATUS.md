@@ -1,26 +1,41 @@
 # STATUS — Field Journal
 
-_Cycle 1 · 2026-07-05_
+_Cycle 2 · 2026-07-05_
 
-## Where things stand
-- ✅ Full app built: journal, spot (camera+upload → identify → confirm), entry
-  pages with share cards, life list + badges, painted sighting map, seasonal
-  almanac, celebration moment, offline PWA, mock + live identification.
-- ✅ Scripted full-loop test (`node test/fullloop.js`): **ALL PASS** —
-  cold load → upload → identify → confirm → celebration → collection →
-  offline reopen with photo+notes intact → offline capture queues →
-  not-a-bird and blurry photos handled gracefully.
-- ✅ Screenshots of every screen at phone + tablet: `test/shots/`.
+## Checker cycle 1 — results
+Three fresh-context adversarial checkers attacked the running app:
+
+- **Full-loop + wrong-bird checker: PASS** on all claims (cold load → capture →
+  identify → confirm → celebration → collection → offline reopen intact;
+  not-a-bird & blurry handled, override + manual naming work, queued offline
+  capture identifies on reconnect). Found 3 defects → **all fixed**:
+  double-tap confirm corrupted life-list counts (now idempotent recount),
+  double-tap identify filed phantom duplicates (debounced), orphaned
+  not-a-bird records leaked storage (purged on load).
+- **Flip-through checker: PASS** ("reads as a hand-painted keepsake").
+  Found 5 defects → **all fixed**: share-card text clipping (wrapped +
+  truncated), fixed-height notes textarea (auto-grows), map pin pile-ups
+  (collision-relaxed layout + species legend), demo photos not matching
+  species shape/time (shape- and time-aware), tablet map emptiness (legend).
+- **Design/screenshot checker: FAIL** with 6 violations → **all fixed**:
+  native webkit search-clear X (suppressed), default orange focus rings
+  (hand-dashed sepia focus language + pigment underline on inputs), camera
+  feed escaping the painted viewfinder (organic corners, snug frame),
+  tablet capture layout collision (viewport-capped viewfinder), content
+  bleeding through bottom nav (opaque paper shelf), delete dialog surviving
+  navigation (Escape/backdrop/route cleanup for all overlays).
+
+All fixes verified on real pixels (`test/shots/fix-*.png`) and the scripted
+suites still pass (`fullloop.js` ALL PASS, `identify-core.test.js` 8/8).
 
 ## Current gap
-- Fresh-context checker agents have not attacked the four bar tests yet.
-  That's next: screenshot test, full-loop test, flip-through test, wrong-bird
-  test — each run by an adversarial checker against the live app.
+Design checker must re-attack from fresh context — it FAILED cycle 1, so its
+verdict needs to flip to PASS on the fixed app. Regression checker re-runs
+the functional attacks.
 
 ## Latest screenshots
-`test/shots/phone-*.png`, `test/shots/tablet-*.png`, `test/shots/loop-*.png`
-(regenerate with `node test/shots.js` / `node test/fullloop.js`).
+`test/shots/` — `phone-*`, `tablet-*`, `loop-*`, `fix-*`, `checker*-*`.
 
 ## What's next
-1. Run checker cycle 1 (all four tests, fresh-context agents).
-2. Fix the biggest gap it finds; repeat until the checker can't fail anything.
+1. Checker cycle 2: fresh design checker + regression checker.
+2. Fix anything found; repeat until nothing fails.

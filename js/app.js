@@ -29,6 +29,7 @@ let currentNav = 'journal';
 
 async function route() {
   leaveSpot(); // stop any camera stream when navigating away
+  document.getElementById('overlay-root').innerHTML = ''; // no orphaned dialogs across screens
   const hash = location.hash || '#/';
   const r = routes.find(x => x.match.test(hash)) || routes[0];
   const m = hash.match(r.match);
