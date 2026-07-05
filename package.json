@@ -1,0 +1,14 @@
+{
+  "name": "field-journal",
+  "version": "1.0.0",
+  "description": "A watercolor field-journal bird watching PWA",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "shots": "node test/shots.js",
+    "fullloop": "node test/fullloop.js"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.61.1"
+  }
+}

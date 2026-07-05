@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Field Journal — a watercolor bird diary</title>
+  <meta name="description" content="A hand-painted field journal for the birds you meet.">
+  <meta name="theme-color" content="#f5efdd">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Field Journal">
+  <link rel="stylesheet" href="css/journal.css">
+  <noscript><style>#noscript-note{display:block!important}</style></noscript>
+</head>
+<body>
+  <div id="noscript-note" style="display:none;padding:40px;text-align:center;font-family:Georgia,serif">
+    Field Journal needs JavaScript to paint its pages.
+  </div>
+  <div id="app"></div>
+  <nav id="nav" class="nav" aria-label="Main"></nav>
+  <div id="overlay-root"></div>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
