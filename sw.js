@@ -2,7 +2,7 @@
    generators, fonts) is precached; sightings live in IndexedDB; only
    identification needs the network, and it queues gracefully. */
 
-const VERSION = 'fj-v1';
+const VERSION = 'fj-v2';
 const PRECACHE = [
   './',
   'index.html',
@@ -71,11 +71,15 @@ self.addEventListener('fetch', event => {
 
   if (event.request.method !== 'GET') return;
 
-  // navigations: cached shell first
+  // navigations to app routes get the cached shell; direct file URLs
+  // (someone opening an icon or font in a tab) pass through untouched
   if (event.request.mode === 'navigate') {
-    event.respondWith(
-      caches.match('index.html').then(hit => hit || fetch(event.request))
-    );
+    const isFile = /\.[a-z0-9]+$/i.test(url.pathname) && !url.pathname.endsWith('.html');
+    if (!isFile) {
+      event.respondWith(
+        caches.match('index.html').then(hit => hit || fetch(event.request))
+      );
+    }
     return;
   }
 
