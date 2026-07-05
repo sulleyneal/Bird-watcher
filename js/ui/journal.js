@@ -81,7 +81,7 @@ export function entryCard(s, i = 0) {
   const rarity = confirmed && s.rarity && s.rarity !== 'common'
     ? chip(store.RARITY_LABEL[s.rarity], store.RARITY_COLOR[s.rarity], { icon: 'sparkle' }) : '';
   const pending = s.idStatus === 'queued'
-    ? `<span class="pending-note">${icon('cloud')} will identify when back online</span>`
+    ? `<span class="pending-note">${icon('cloud')} ${navigator.onLine ? 'waiting for the guide — retrying shortly' : 'will identify when back online'}</span>`
     : s.idStatus === 'needs_confirm'
       ? `<span class="pending-note">${icon('question')} tap to confirm — likely ${esc(s.candidates && s.candidates[0] ? s.candidates[0].commonName : 'a bird')}</span>`
       : s.idStatus === 'unclear' ? `<span class="pending-note">${icon('question')} tap to take another look</span>` : '';
