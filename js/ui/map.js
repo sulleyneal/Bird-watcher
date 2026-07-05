@@ -68,6 +68,7 @@ export async function renderMap(screen) {
 }
 
 function terrainSVG(W, H, placed, X, Y) {
+  const labels = pinLabels(placed);
   const rand = rng('terrain');
   const f1 = nextId('f'), f2 = nextId('f'), fi = nextId('f');
   let g = `<defs>${wcSoftFilter(f1, 21, 12, 0.02, 1)}${wcSoftFilter(f2, 33, 9, 0.03, 0.7)}${wcFilter(fi, 44, 2.5, 0.06)}</defs>`;
@@ -133,8 +134,8 @@ function terrainSVG(W, H, placed, X, Y) {
     g += `<g class="map-pin" data-id="${s.id}" transform="translate(${x - 17},${y - 34})" role="button" tabindex="0" aria-label="${esc(s.commonName)}">
       ${splatToGroup(splatSVG({ size: 34, seed: 'pin-' + s.id, color, opacity: 0.85 }))}
       <path d="M17 30 L17 40" stroke="#42392b" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
-      <circle cx="17" cy="14" r="5.5" fill="#f6f1e3" opacity="0.85"/>
-      <text x="17" y="19" text-anchor="middle" font-family="Caveat" font-weight="700" font-size="14" fill="#42392b">${esc(initials(s.commonName))}</text>
+      <circle cx="17" cy="14" r="6" fill="#f6f1e3" opacity="0.85"/>
+      <text x="17" y="18.5" text-anchor="middle" font-family="Caveat" font-weight="700" font-size="12.5" fill="#42392b">${esc(labels.get(s.speciesKey))}</text>
     </g>`;
   }
 
@@ -146,4 +147,26 @@ function splatToGroup(svg) {
 }
 function initials(name) {
   return (name || '?').split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
+}
+
+/* unique short labels per species: extend with letters until distinct
+   (Carolina Wren vs Cedar Waxwing → CaW / CeW) */
+function pinLabels(placed) {
+  const keys = [...new Set(placed.map(s => s.speciesKey))];
+  const names = new Map(keys.map(k => [k, placed.find(s => s.speciesKey === k).commonName || '?']));
+  const labels = new Map();
+  for (const [key, name] of names) {
+    for (let extra = 0; ; extra++) {
+      const label = shortLabel(name, extra);
+      const clash = [...names].some(([k2, n2]) => k2 !== key && shortLabel(n2, extra) === label);
+      if (!clash || extra >= 3) { labels.set(key, label); break; }
+    }
+  }
+  return labels;
+}
+function shortLabel(name, extra) {
+  const words = name.split(/\s+/);
+  if (words.length === 1) return words[0].slice(0, 2 + extra);
+  const first = words[0][0] + words[0].slice(1, 1 + extra).toLowerCase();
+  return first + words[words.length - 1][0].toUpperCase();
 }

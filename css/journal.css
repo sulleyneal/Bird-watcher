@@ -40,6 +40,9 @@ html { height: 100%; }
 input:focus-visible, textarea:focus-visible { outline: none; }
 input, textarea { caret-color: var(--rust); }
 
+/* selecting text sweeps a pigment wash, not browser blue */
+::selection { background: rgba(176, 96, 63, .28); color: var(--ink); }
+
 /* no native search chrome — the journal draws its own marks */
 input[type="search"] { -webkit-appearance: none; appearance: none; }
 input[type="search"]::-webkit-search-cancel-button,

@@ -220,7 +220,13 @@ async function shareCard(s, art) {
 
 function wrapText(text, maxChars, maxLines) {
   if (!text) return [];
-  const words = text.split(/\s+/);
+  // hard-break any unbroken token (URLs, etc.) longer than a line
+  const words = text.split(/\s+/).flatMap(w => {
+    const parts = [];
+    while (w.length > maxChars) { parts.push(w.slice(0, maxChars - 1) + '-'); w = w.slice(maxChars - 1); }
+    parts.push(w);
+    return parts;
+  });
   const lines = [];
   let line = '';
   let truncated = false;

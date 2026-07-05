@@ -165,6 +165,11 @@ export function showResultStep(stage, sighting, onDone) {
   const result = sighting.idResult || {};
   const cands = sighting.candidates || [];
 
+  // brief input guard: a fast identification must not let the tail of a
+  // double-tap "Identify" click-through-confirm a species unseen
+  stage.style.pointerEvents = 'none';
+  setTimeout(() => { stage.style.pointerEvents = ''; }, 450);
+
   if (sighting.idStatus === 'not_bird') {
     stage.innerHTML = `
       <div class="empty-state">
